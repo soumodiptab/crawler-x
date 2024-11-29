@@ -24,6 +24,16 @@ const messageProcessedCounter = new client.Counter({
     help: 'Total number of messages processed',
 });
 
+const classificationCounter = new client.Counter({
+    name: 'classification_requests_total',
+    help: 'Total number of classification requests',
+});
+
+const classificationErrorCounter = new client.Counter({
+    name: 'classification_errors_total',
+    help: 'Total number of classification errors',
+});
+
 function incrementCrawlCounter() {
     crawlCounter.inc();
 }
@@ -40,10 +50,18 @@ function incrementMessageProcessedCounter() {
     messageProcessedCounter.inc();
 }
 
+function incrementClassificationCounter() {
+    classificationCounter.inc();
+}
+
+function incrementClassificationErrorCounter() {
+    classificationErrorCounter.inc();
+}
+
 function exposeMetrics(app) {
     app.get('/metrics', async (req, res) => {
         res.set('Content-Type', client.register.contentType);
-        res.send(await client.register.metrics());
+        res.end(await client.register.metrics());
     });
 }
 
@@ -52,5 +70,7 @@ module.exports = {
     incrementErrorCounter,
     incrementRetryCounter,
     incrementMessageProcessedCounter,
+    incrementClassificationCounter,
+    incrementClassificationErrorCounter,
     exposeMetrics,
 }; 

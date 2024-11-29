@@ -1,93 +1,97 @@
-# Web Crawler Project
+# Web Crawler System
 
-This project is a scalable web crawler built using Node.js, RabbitMQ, and MongoDB. It features centralized logging, monitoring, and a microservices architecture to handle large-scale web crawling tasks efficiently.
+## Overview
+
+The Web Crawler System is designed to efficiently crawl web pages, extract metadata, and classify the content using the OpenAI API. It is built with scalability, reliability, and observability in mind, leveraging a microservices architecture, message queuing, and centralized logging and monitoring.
 
 ## Features
 
-- **Microservices Architecture**: Separates the API server and queue processor for independent scaling.
-- **Dockerized**: Uses Docker and Docker Compose for easy deployment.
-- **Centralized Logging**: Utilizes `winston` for logging, with support for centralized log aggregation.
-- **Monitoring**: Exposes metrics via Prometheus and visualizes them with Grafana.
-- **Rate Limiting and Retry Mechanism**: Ensures compliance with web server limits and handles failures gracefully.
+- **URL Ingestion**: Accepts file uploads containing URLs for processing.
+- **Web Crawling**: Fetches web pages and extracts metadata.
+- **Content Classification**: Classifies metadata using the OpenAI API.
+- **Monitoring**: Provides real-time monitoring and alerting.
+- **Retry Mechanism**: Handles rate limits and transient errors with retries.
 
 ## Prerequisites
 
-- **Docker** and **Docker Compose**: Ensure Docker and Docker Compose are installed on your system.
-- **Node.js**: Required for local development and running scripts.
+- Node.js (v14 or later)
+- MongoDB
+- RabbitMQ
+- Prometheus and Grafana (for monitoring)
+- OpenAI API Key
 
-## Setup
+## Installation
 
 1. **Clone the Repository**:
+
    ```bash
-   git clone https://github.com/yourusername/web-crawler.git
-   cd web-crawler
+   git clone https://github.com/yourusername/web-crawler-system.git
+   cd web-crawler-system
    ```
 
-2. **Create a `.env` File**:
-   Create a `.env` file in the root directory with the following content:
-   ```plaintext
-   MONGODB_URI=mongodb://mongo:27017/webcrawler
-   RABBITMQ_URI=amqp://rabbitmq
-   QUEUE_NAME=urlQueue
-   API_PORT=3000
-   ```
+2. **Install Dependencies**:
 
-3. **Build and Run with Docker Compose**:
-   Use Docker Compose to build and run the services:
-   ```bash
-   docker-compose up --build
-   ```
-
-   This will start the API server, queue processor, MongoDB, and RabbitMQ.
-
-## Usage
-
-1. **Upload URLs**:
-   - Use the API server to upload a text file containing URLs to crawl.
-   - The API endpoint is available at `http://localhost:3000/upload`.
-   - Use a tool like `curl` or Postman to upload the file.
-
-   Example using `curl`:
-   ```bash
-   curl -F 'file=@urls.txt' http://localhost:3000/upload
-   ```
-
-2. **Monitor Metrics**:
-   - Metrics are exposed at `http://localhost:3000/metrics`.
-   - Configure Prometheus to scrape this endpoint and use Grafana for visualization.
-
-3. **View Logs**:
-   - Logs are stored in the `logs` directory.
-   - Use a centralized logging solution to aggregate and analyze logs.
-
-## Scaling
-
-- **Queue Processor**: Scale the queue processor by running multiple instances:
-  ```bash
-  docker-compose scale queue-processor=3
-  ```
-
-## Development
-
-1. **Install Dependencies**:
    ```bash
    npm install
    ```
 
-2. **Run API Server Locally**:
+3. **Set Up Environment Variables**:
+
+   Create a `.env` file in the root directory with the following variables:
+
+   ```plaintext
+   MONGODB_URI=mongodb://localhost:27017/webcrawler
+   RABBITMQ_URI=amqp://localhost
+   QUEUE_NAME=urlQueue
+   RETRY_QUEUE_NAME=retryQueue
+   RECYCLER_QUEUE_NAME=recyclerQueue
+   INSIGHT_QUEUE_NAME=insightQueue
+   API_PORT=3000
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+## Running the Project
+
+1. **Start MongoDB**:
+   Ensure MongoDB is running on your local machine.
+
+2. **Start RabbitMQ**:
+   Ensure RabbitMQ is running on your local machine.
+
+3. **Run the API Server**:
    ```bash
    node src/apiServer.js
    ```
 
-3. **Run Queue Processor Locally**:
+4. **Run the Consumer**:
+
    ```bash
-   node src/crawler.js
+   node src/consumer.js
    ```
+
+5. **Run the Watcher Service**:
+
+   ```bash
+   node src/watcher.js
+   ```
+
+6. **Set Up Monitoring**:
+   - Start Prometheus and Grafana.
+   - Configure Prometheus to scrape metrics from the API server.
+
+## Monitoring
+
+- Access Grafana at `http://localhost:3000` to view dashboards and metrics.
+- Ensure Prometheus is configured to scrape metrics from the `/metrics` endpoint exposed by the API server.
+
+## Design Document
+
+For a detailed design document, please refer to [design/des.md](design/des.md).
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request.
+Contributions are welcome! Please read the [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

@@ -3,8 +3,8 @@ const { Configuration, OpenAIApi } = require('openai');
 const mongoose = require('mongoose');
 const Metadata = require('../models/metadata');
 const Classification = require('../models/classification');
-const Queue = require('../queue');
 const logger = require('../logger');
+const { incrementClassificationCounter, incrementClassificationErrorCounter } = require('../monitor');
 
 // Initialize OpenAI API
 const configuration = new Configuration({
@@ -13,9 +13,7 @@ const configuration = new Configuration({
 const openai = new OpenAIApi(configuration);
 
 class InsightService {
-    constructor() {
-        this.queue = new Queue(process.env.INSIGHT_QUEUE_NAME);
-    }
+    constructor() {}
 
     async connectToDB() {
         if (!mongoose.connection.readyState) {
@@ -27,29 +25,27 @@ class InsightService {
         }
     }
 
-    async classifyMetadata() {
+    async classifyMetadata(metadataId) {
         await this.connectToDB();
-        await this.queue.connect();
 
-        this.queue.consumeMessages(async (msg) => {
-            const { metadataId } = JSON.parse(msg.content.toString());
-            const metadata = await Metadata.findById(metadataId);
+        const metadata = await Metadata.findById(metadataId);
 
-            if (metadata) {
-                try {
-                    const category = await this.classifyText(metadata.title, metadata.description, metadata.body);
-                    const classification = new Classification({ metadataId, category });
-                    await classification.save();
+        if (metadata) {
+            try {
+                incrementClassificationCounter();
+                const category = await this.classifyText(metadata.title, metadata.description, metadata.body);
+                const classification = new Classification({ metadataId, category });
+                await classification.save();
 
-                    metadata.classificationId = classification._id;
-                    await metadata.save();
+                metadata.classificationId = classification._id;
+                await metadata.save();
 
-                    logger.info('Classified document', { metadataId, category });
-                } catch (error) {
-                    logger.error('Error classifying document', { metadataId, error });
-                }
+                logger.info('Classified document', { metadataId, category });
+            } catch (error) {
+                incrementClassificationErrorCounter();
+                logger.error('Error classifying document', { metadataId, error });
             }
-        });
+        }
     }
 
     async classifyText(title, description, body) {
